@@ -1,0 +1,14 @@
+artifact_uri: file:///c:/Users/user/Desktop/week5/Credit-Risk-Probability-Model/notebooks/mlruns/0/11c8b41ae0e04eba97e31f1221c8f139/artifacts
+end_time: 1751360138021
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 11c8b41ae0e04eba97e31f1221c8f139
+run_name: RandomForest_GridSearch
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1751360112554
+status: 3
+tags: []
+user_id: user

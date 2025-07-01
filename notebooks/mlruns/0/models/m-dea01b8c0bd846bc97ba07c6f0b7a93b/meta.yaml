@@ -1,0 +1,10 @@
+artifact_location: file:///c:/Users/user/Desktop/week5/Credit-Risk-Probability-Model/notebooks/mlruns/0/models/m-dea01b8c0bd846bc97ba07c6f0b7a93b/artifacts
+creation_timestamp: 1751359978119
+experiment_id: '0'
+last_updated_timestamp: 1751359982063
+model_id: m-dea01b8c0bd846bc97ba07c6f0b7a93b
+model_type: null
+name: model
+source_run_id: 07b389043115499cb98d6ea90e8ff34f
+status: 2
+status_message: null

@@ -1,0 +1,14 @@
+artifact_uri: file:///c:/Users/user/Desktop/week5/Credit-Risk-Probability-Model/notebooks/mlruns/0/9d353de7241c42318858e4d79fafca44/artifacts
+end_time: 1751359962653
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 9d353de7241c42318858e4d79fafca44
+run_name: LogisticRegression
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1751359955064
+status: 3
+tags: []
+user_id: user
