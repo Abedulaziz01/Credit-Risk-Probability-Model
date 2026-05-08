@@ -1,6 +1,6 @@
 # Credit Risk Probability Model
 
-Production-oriented credit risk scoring project for Bati Bank's buy-now-pay-later partnership with an eCommerce platform. The system transforms customer transaction behavior into a proxy credit-risk label, trains a supervised model, tracks experiments with MLflow, serves predictions through FastAPI, and provides an interactive Streamlit dashboard for decision support.
+An end-to-end credit risk scoring project for **Bati Bank** to support a **buy-now-pay-later** partnership with an eCommerce platform. This repository turns raw transaction behavior into a proxy credit-risk signal, trains and tracks models with MLflow, exposes predictions through FastAPI, and provides a Streamlit dashboard for interactive risk assessment.
 
 ## Launch The Dashboard
 
@@ -10,106 +10,171 @@ Production-oriented credit risk scoring project for Bati Bank's buy-now-pay-late
 
 After startup, open `http://localhost:8501`.
 
+## Table Of Contents
+
+- [Project Overview](#project-overview)
+- [Business Context](#business-context)
+- [Credit Scoring Business Understanding](#credit-scoring-business-understanding)
+- [System Architecture](#system-architecture)
+- [Project Structure](#project-structure)
+- [Feature Engineering Summary](#feature-engineering-summary)
+- [Modeling Approach](#modeling-approach)
+- [Quick Start](#quick-start)
+- [Streamlit Dashboard](#streamlit-dashboard)
+- [API](#api)
+- [Testing And Quality Checks](#testing-and-quality-checks)
+- [Docker](#docker)
+- [Key Outputs](#key-outputs)
+- [Current Verified Status](#current-verified-status)
+
 ## Project Overview
 
-This repository covers the full workflow required in the task:
+This project was built to solve a practical analytics engineering and ML problem:
 
-- business framing for proxy-based credit scoring
-- exploratory analysis and customer-behavior insight generation
-- reproducible feature engineering in Python scripts
-- RFM-based proxy target creation with KMeans clustering
-- model training, evaluation, and MLflow registration
-- FastAPI deployment for inference
-- Streamlit dashboard for interactive scoring
-- unit tests, linting, Docker support, and CI
+- define a proxy target when direct default labels are unavailable
+- engineer reproducible customer-level features from raw transactions
+- train a model that estimates customer risk probability
+- translate risk into an interpretable credit score
+- provide simple loan amount and duration recommendations
+- operationalize the model through an API and dashboard
+
+The solution is organized as a repo that is ready for experimentation, testing, deployment, and GitHub submission.
+
+## Business Context
+
+Bati Bank wants to support credit-based purchases for eCommerce customers, but responsible lending requires a measurable and documented view of borrower risk. Since the source data is behavioral transaction data rather than traditional loan repayment history, the project uses customer engagement patterns as a proxy for default risk. The final product is not only a model, but a lightweight credit-risk platform with:
+
+- automated feature generation
+- proxy risk labeling
+- model training and registration
+- API-based scoring
+- dashboard-based decision support
 
 ## Credit Scoring Business Understanding
 
 ### Basel II and interpretability
 
-Basel II emphasizes disciplined credit-risk measurement, documentation, and governance. In practice, this means the bank cannot rely on a model that is only accurate; it must also be explainable enough to justify approvals, rejections, and pricing decisions to internal stakeholders, auditors, and regulators. That is why this project keeps the data pipeline explicit, logs experiments, and documents the proxy-label design.
+The Basel II Accord emphasizes disciplined credit-risk measurement, transparent documentation, and defensible decision-making. In practice, that means a bank should not depend on a model that is only accurate. The model must also be explainable enough for internal review, audit, and regulatory scrutiny. This project supports that requirement by keeping the data pipeline explicit, tracking experiments with MLflow, and documenting how the proxy target is created.
 
 ### Why a proxy target is necessary
 
-The source dataset does not include a real loan-default outcome. Because supervised credit models require a target, this project creates a behavioral proxy using Recency, Frequency, and Monetary patterns. Customers in the least-engaged cluster are treated as higher-risk proxies. This makes modeling possible, but it also introduces business risk: a proxy is not the same thing as actual default, so false signals can lead to unfair denials, weak approvals, or mispriced loans.
+The dataset does not contain a true loan-default label. Because supervised classification requires a target, the project creates a behavioral proxy based on **Recency, Frequency, and Monetary (RFM)** customer patterns. Customers in the least-engaged cluster are labeled as higher-risk proxies. This enables model training, but it also introduces business risk because a proxy is not a real repayment outcome. If the proxy is imperfect, the bank may under-estimate good customers or over-estimate risky ones.
 
 ### Simple vs. complex models in a regulated setting
 
-Simple models such as Logistic Regression with Weight of Evidence are easier to explain, validate, and audit. More complex models such as Random Forest or Gradient Boosting can capture nonlinear relationships and may perform better, but they are harder to interpret and govern. In a regulated environment, the best choice is not always the most accurate model in isolation; it is the model that offers a credible balance between performance, transparency, stability, and operational trust.
+Simple models such as Logistic Regression with Weight of Evidence are easier to explain, validate, and audit. More complex models such as Random Forest or Gradient Boosting can capture nonlinear relationships and often improve predictive performance, but they are harder to interpret and govern. In a regulated lending environment, the strongest solution is usually the one that balances predictive power with traceability, stability, and trust.
 
-## EDA Highlights
+## System Architecture
 
-- Customer activity is highly skewed, with a small number of customers generating a large share of total transaction volume.
-- Transaction values and counts contain strong outliers, so aggregated features and scaling matter for both clustering and classification.
-- Temporal behavior is informative, which supports the inclusion of recency and transaction-timing features.
-- Product categories and channels are diverse, making one-hot encoding a better fit than manual ordinal mappings for most categorical inputs.
-- Fraud cases are rare, so `FraudResult` is useful as a signal but not as a target.
-
-## Solution Architecture
-
-### 1. Data processing
-
-Raw transaction data is converted into customer-level features, including:
-
-- total transaction amount
-- average transaction amount
-- transaction count
-- transaction amount standard deviation
-- maximum transaction amount
-- total transaction value
-- average and standard deviation of transaction hour
-- average and standard deviation of transaction day
-- average and standard deviation of transaction month
-- average transaction year
-- RFM metrics: `recency_days`, `frequency`, `monetary`
-
-### 2. Proxy target engineering
-
-The target column `is_high_risk` is created by:
-
-1. computing RFM metrics for each customer
-2. scaling the RFM features
-3. clustering customers into 3 groups with KMeans
-4. selecting the least-engaged cluster as the high-risk proxy segment
-
-### 3. Modeling
-
-The training script evaluates multiple models, tunes them with grid search, logs metrics to MLflow, and registers the best model under:
-
-- registered model name: `credit_risk_model`
-- alias: `champion`
-
-### 4. Inference outputs
-
-For a new customer, the system returns:
-
-- risk probability
-- binary risk label
-- derived credit score
-- recommended loan amount
-- recommended loan duration
+```mermaid
+flowchart LR
+    A[Raw Transaction Data<br/>DATA/data.csv] --> B[Feature Engineering Pipeline<br/>src/data_processing.py]
+    B --> C[Customer-Level Dataset<br/>data/processed/customer_features.csv]
+    C --> D[Proxy Target Engineering<br/>RFM + KMeans]
+    D --> E[Model Training<br/>src/train.py]
+    E --> F[Best Model<br/>models/best_model.joblib]
+    E --> G[MLflow Tracking + Registry<br/>credit_risk_model@champion]
+    F --> H[Shared Model Loader<br/>src/model_loader.py]
+    G --> H
+    H --> I[FastAPI Service<br/>src/api/main.py]
+    H --> J[Streamlit Dashboard<br/>streamlit_app.py]
+    I --> K[Risk Probability API]
+    J --> L[Interactive Credit Scoring UI]
+```
 
 ## Project Structure
 
 ```text
 Credit-Risk-Probability-Model/
-├── .github/workflows/ci.yml
-├── DATA/
-├── notebooks/
-├── src/
-│   ├── api/
-│   ├── config.py
-│   ├── data_processing.py
-│   ├── model_loader.py
-│   ├── predict.py
-│   └── train.py
-├── tests/
-├── streamlit_app.py
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
-└── README.md
+|-- .github/
+|   `-- workflows/
+|       `-- ci.yml
+|-- DATA/
+|   |-- data.csv
+|   |-- data.xlsx
+|   |-- Xente_Variable_Definitions.csv
+|   `-- Xente_Variable_Definitions.xlsx
+|-- notebooks/
+|   `-- 1.0-eda.ipynb
+|-- src/
+|   |-- api/
+|   |   |-- __init__.py
+|   |   |-- main.py
+|   |   `-- pydantic_models.py
+|   |-- __init__.py
+|   |-- aggregate_features.py
+|   |-- config.py
+|   |-- data_processing.py
+|   |-- feature.py
+|   |-- model_loader.py
+|   |-- predict.py
+|   `-- train.py
+|-- tests/
+|   `-- test_data_processing.py
+|-- streamlit_app.py
+|-- Dockerfile
+|-- docker-compose.yml
+|-- README.md
+`-- requirements.txt
 ```
+
+## Feature Engineering Summary
+
+The pipeline converts raw transaction rows into customer-level modeling features. Key engineered features include:
+
+- `TotalTransactionAmount`
+- `AverageTransactionAmount`
+- `TransactionCount`
+- `StdDevTransactionAmount`
+- `MaxTransactionAmount`
+- `TotalValue`
+- `AverageTransactionHour`
+- `StdTransactionHour`
+- `AverageTransactionDay`
+- `StdTransactionDay`
+- `AverageTransactionMonth`
+- `StdTransactionMonth`
+- `AverageTransactionYear`
+- `recency_days`
+- `frequency`
+- `monetary`
+
+Categorical features such as `CurrencyCode`, `ProviderId`, `ProductCategory`, and `ChannelId` are handled through preprocessing and one-hot encoding inside the training pipeline.
+
+## Modeling Approach
+
+### Proxy target engineering
+
+The project creates `is_high_risk` using RFM-based customer segmentation:
+
+1. compute recency, frequency, and monetary metrics per customer
+2. standardize the RFM feature space
+3. cluster customers into 3 groups using KMeans
+4. identify the least-engaged cluster as the high-risk proxy group
+
+### Candidate models
+
+The training workflow evaluates at least:
+
+- Logistic Regression
+- Random Forest
+
+The best model is selected using grid search and ROC-AUC, then:
+
+- saved locally as `models/best_model.joblib`
+- logged to MLflow
+- registered under `credit_risk_model`
+- assigned the alias `champion`
+
+### Prediction outputs
+
+For each scored customer, the system returns:
+
+- risk probability
+- risk label
+- credit score
+- recommended loan amount
+- recommended loan duration
 
 ## Quick Start
 
@@ -150,21 +215,23 @@ Open `http://localhost:8501`.
 
 ## Streamlit Dashboard
 
-The dashboard provides:
+The dashboard is designed for quick manual scoring and demo-friendly exploration. It provides:
 
-- single-customer scoring from an interactive sidebar
-- credit score and loan recommendation display
-- batch CSV upload for bulk scoring
-- downloadable prediction output
-- preview of the processed reference dataset
+- single-customer scoring from sidebar inputs
+- model-backed risk probability estimation
+- derived credit score display
+- recommended loan amount and duration
+- batch CSV scoring for multiple customers
+- prediction export as CSV
+- preview of the processed customer feature dataset
 
 ## API
 
 ### Endpoints
 
 - `GET /` returns service metadata
-- `GET /health` returns health status and the active model source
-- `POST /predict` returns risk probability, label, credit score, and loan recommendation
+- `GET /health` returns health status and active model source
+- `POST /predict` scores a customer and returns prediction outputs
 
 ### Example request payload
 
@@ -218,17 +285,18 @@ docker-compose up --build
 
 - processed dataset: `data/processed/customer_features.csv`
 - trained model: `models/best_model.joblib`
-- MLflow tracking: `mlruns/`
-- Streamlit app: `streamlit_app.py`
+- MLflow tracking store: `mlruns/`
+- Streamlit application: `streamlit_app.py`
+- FastAPI service: `src/api/main.py`
 
 ## Current Verified Status
 
-The repository has been verified locally with:
+The repository has been verified locally with the following checks completed successfully:
 
-- processed dataset generation working
-- model training working
-- MLflow model registration working
-- FastAPI startup and prediction working
-- Streamlit model loading working
+- processed dataset generation
+- model training
+- MLflow model registration
+- FastAPI startup and prediction
+- Streamlit model loading
 - unit tests passing
 - lint and formatting checks passing
