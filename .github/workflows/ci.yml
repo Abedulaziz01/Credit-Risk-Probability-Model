@@ -1,9 +1,9 @@
-name: Check requirements.txt
+name: Python CI
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
-  check-requirements:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,3 +16,32 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
+
+      - name: Run flake8 linter
+        run: |
+          flake8 src tests --max-line-length=120 --count --show-source --statistics
+        continue-on-error: false
+
+      - name: Run black code formatter check
+        run: |
+          black --check src tests --line-length=120
+        continue-on-error: false
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run pytest
+        run: |
+          pytest tests/ -v --tb=short
+        continue-on-error: false

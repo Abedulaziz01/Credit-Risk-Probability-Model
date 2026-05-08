@@ -7,5 +7,8 @@ services:
       - "8000:8000"
     environment:
       MODEL_PATH: /app/models/best_model.joblib
+      MLFLOW_TRACKING_URI: file:///app/mlruns
+      MLFLOW_MODEL_NAME: credit_risk_model
+      MLFLOW_MODEL_ALIAS: champion
     volumes:
       - .:/app
