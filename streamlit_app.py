@@ -11,6 +11,8 @@ from src.predict import predict
 
 st.set_page_config(page_title="Bati Bank Credit Risk Dashboard", page_icon=":bar_chart:", layout="wide")
 
+INTEGER_NUMERIC_COLUMNS = {"TransactionCount", "frequency"}
+
 
 def _load_reference_frame() -> pd.DataFrame:
     candidate_paths = [
@@ -71,8 +73,18 @@ def render_sidebar(reference_df: pd.DataFrame) -> dict:
             payload[column] = selected
 
     for column in NUMERIC_FEATURES:
-        step = 1.0 if column not in {"TransactionCount", "frequency", "AverageTransactionYear"} else 1
-        payload[column] = st.sidebar.number_input(column, value=float(numeric_defaults[column]), step=step)
+        if column in INTEGER_NUMERIC_COLUMNS:
+            payload[column] = st.sidebar.number_input(
+                column,
+                value=int(round(numeric_defaults[column])),
+                step=1,
+            )
+        else:
+            payload[column] = st.sidebar.number_input(
+                column,
+                value=float(numeric_defaults[column]),
+                step=1.0,
+            )
 
     payload["TransactionCount"] = int(payload["TransactionCount"])
     payload["frequency"] = int(payload["frequency"])
